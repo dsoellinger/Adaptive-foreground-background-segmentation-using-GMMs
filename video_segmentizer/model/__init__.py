@@ -1,1 +1,2 @@
-from .gaussian import Gaussian
+from .iid_gaussian import IIDGaussian
+from .gmm import GMM
