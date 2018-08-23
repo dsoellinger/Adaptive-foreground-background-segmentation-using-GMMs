@@ -1,2 +1,3 @@
 from .iid_gaussian import IIDGaussian
-from .gmm import GMM
+from .pixel_process import PixelProcess
+from .video_segmentizer import VideoSegmentizer
