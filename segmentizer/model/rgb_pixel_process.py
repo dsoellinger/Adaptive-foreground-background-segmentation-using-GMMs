@@ -53,6 +53,7 @@ class RGBPixelProcess:
             else:
 
                 best_matching_weight, best_matching_gaussian = self._mixture[best_matching_gaussian_idx]
+
                 best_matching_gaussian.partial_fit(x, lr=lr)
 
                 total_weight = 0.0

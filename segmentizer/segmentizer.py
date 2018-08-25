@@ -19,7 +19,7 @@ class Segmentizer:
 
         for i in range(self._height):
             for j in range(self._width):
-                self._image_model[i][j].fit(image[i][j])
+                self._image_model[i][j].fit(image[i][j].tolist())
 
 
     def classify_image(self, image):
@@ -29,7 +29,7 @@ class Segmentizer:
         for i in range(self._height):
             row = []
             for j in range(self._width):
-                row.append(0 if self._image_model[i][j].is_background_pixel(image[i][j]) else 1)
+                row.append(0 if self._image_model[i][j].is_background_pixel(image[i][j].tolist()) else 1)
 
             background.append(row)
 

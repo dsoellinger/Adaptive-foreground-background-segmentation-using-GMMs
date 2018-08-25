@@ -17,7 +17,7 @@ class IDDGaussianTest(unittest.TestCase):
         for mean, variance, x, expected_density in test_cases:
             gaussian = IIDGaussian(mean, variance)
             density = gaussian.pdf(x)
-            assert np.alltrue(density == expected_density)
+            assert density == expected_density
 
     def test_mahalanobis(self):
 
@@ -32,7 +32,8 @@ class IDDGaussianTest(unittest.TestCase):
         for mean, variance, x, expected_distance in test_cases:
             gaussian = IIDGaussian(mean, variance)
             distance = gaussian.mahalanobis_distance_between(x)
-            assert np.alltrue(distance == expected_distance)
+            assert distance == expected_distance
+
 
 if __name__ == '__main__':
     unittest.main()

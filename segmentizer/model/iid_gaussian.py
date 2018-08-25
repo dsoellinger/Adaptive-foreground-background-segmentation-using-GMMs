@@ -1,33 +1,24 @@
-import numpy as np
 import math
 
 
 class IIDGaussian:
 
     def __init__(self, mean, variance):
-        self._mean = np.array(mean)
+        self._mean = mean
         self._variance = variance
         self._sigma = math.sqrt(self._variance)
         self._inv_variance = 1 / variance
 
-    def diff(self,a, diff):
-        #print(type(a))
-        #print(type(diff))
-        return np.dot(a,diff)
-        return a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
-
     def mahalanobis_distance_between(self, x):
 
         # DIFF = x-mu
-        diff = x - self._mean
+        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
 
         # A = DIFF^T * COV^-1
-        a = diff * self._inv_variance
+        a = [diff[0] * self._inv_variance, diff[1] * self._inv_variance, diff[2] * self._inv_variance]
 
         # B = A * (X-MU)
-        #b = np.dot(a, diff)
-        #b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
-        b = self.diff(a,diff)
+        b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
 
         # MAHALANOBIS = sqrt(B)
         mahalanobis = math.sqrt(b)
@@ -37,13 +28,12 @@ class IIDGaussian:
     def pdf(self, x):
 
         # DIFF = x-mu
-        diff = x - self._mean
+        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
 
         # A = DIFF^T * COV^-1
-        a = diff * self._inv_variance
+        a = [diff[0] * self._inv_variance, diff[1] * self._inv_variance, diff[2] * self._inv_variance]
 
         # B = A * (X-MU)
-        b = np.dot(a, diff)
         b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
 
         # EXPONENT = -0.5 * B
@@ -71,13 +61,12 @@ class IIDGaussian:
         roh = lr * self.pdf(x)
 
         # mu = (1-roh) * mu + roh * X
-        self._mean = (1 - roh) * self._mean + roh * x
+        self._mean = [(1-roh) * self._mean[0] + roh*x[0], (1-roh) * self._mean[1] + roh*x[1], (1-roh) * self._mean[2] + roh*x[2]]
 
         # DIFF = X - mu
-        diff = x - self._mean
+        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
 
         # A = DIFF^T * DIFF
-        #a = np.dot(diff, diff)
         a = diff[0]*diff[0]+diff[1]*diff[1]+diff[2]*diff[2]
 
         # VAR = (1-roh) * VAR + roh * A
