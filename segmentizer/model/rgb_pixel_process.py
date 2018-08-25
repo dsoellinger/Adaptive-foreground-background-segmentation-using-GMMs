@@ -1,19 +1,17 @@
 from .iid_gaussian import IIDGaussian
 
 GMM_INITIAL_WEIGHT = 1
-GMM_INITIAL_VARIANCE = 100
+GMM_INITIAL_VARIANCE = 6
 
 
 class RGBPixelProcess:
 
-    _n_clusters = None
-    _mixture = []
-
     def __init__(self, n_clusters):
         self._n_clusters = n_clusters
+        self._mixture = []
 
     def _sort_mixture(self):
-        self._mixture.sort(key=lambda x: x[0]/x[1].get_sigma())
+        self._mixture.sort(key=lambda x: x[0]/x[1].get_sigma(), reverse=True)
 
     def _get_background_distributions(self, t=0.9):
 
@@ -34,18 +32,15 @@ class RGBPixelProcess:
             if gaus.mahalanobis_distance_between(x) < 2.5:
                 return i
 
-    def _normalize_weights(self, total_weight=None):
-
-        if total_weight is None:
-            total_weight = sum(list(zip(*self._mixture))[0])
+    def _normalize_weights(self, total_weight):
 
         self._mixture = [(w/total_weight, gaus) for w, gaus in self._mixture]
 
-    def fit(self, x, lr=0.99):
+    def fit(self, x, lr=0.01):
 
         if len(self._mixture) < self._n_clusters:
             self._mixture.append((GMM_INITIAL_WEIGHT, IIDGaussian(x, GMM_INITIAL_VARIANCE)))
-            self._normalize_weights()
+            self._normalize_weights(total_weight=len(self._mixture))
 
         else:
 
@@ -86,4 +81,15 @@ class RGBPixelProcess:
             if gaus.mahalanobis_distance_between(x) < 2.5:
                 return True
 
+
+        #print("----")
+        #print(self)
+        #print(','.join(map(lambda x: str(x),background_dist)))
+        #print(x)
+        #print("----")
+
         return False
+
+    def __str__(self):
+        s = 'RGBPixelProcess[' + ','.join(map(lambda x: 'w:' + str(x[0]) + ', gaus:' + str(x[1]),self._mixture)) + ']'
+        return s

@@ -4,16 +4,17 @@ import math
 
 class IIDGaussian:
 
-    _mean = None
-    _variance = None
-    _inv_variance = None
-    _sigma = None
-
     def __init__(self, mean, variance):
         self._mean = np.array(mean)
         self._variance = variance
         self._sigma = math.sqrt(self._variance)
         self._inv_variance = 1 / variance
+
+    def diff(self,a, diff):
+        #print(type(a))
+        #print(type(diff))
+        return np.dot(a,diff)
+        return a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
 
     def mahalanobis_distance_between(self, x):
 
@@ -24,7 +25,9 @@ class IIDGaussian:
         a = diff * self._inv_variance
 
         # B = A * (X-MU)
-        b = np.dot(a, diff)
+        #b = np.dot(a, diff)
+        #b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
+        b = self.diff(a,diff)
 
         # MAHALANOBIS = sqrt(B)
         mahalanobis = math.sqrt(b)
@@ -41,6 +44,7 @@ class IIDGaussian:
 
         # B = A * (X-MU)
         b = np.dot(a, diff)
+        b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
 
         # EXPONENT = -0.5 * B
         exp = -0.5 * b
@@ -73,7 +77,8 @@ class IIDGaussian:
         diff = x - self._mean
 
         # A = DIFF^T * DIFF
-        a = np.dot(diff, diff)
+        #a = np.dot(diff, diff)
+        a = diff[0]*diff[0]+diff[1]*diff[1]+diff[2]*diff[2]
 
         # VAR = (1-roh) * VAR + roh * A
         self._variance = (1-roh) * self._variance + roh * a
@@ -81,3 +86,6 @@ class IIDGaussian:
         self._sigma = math.sqrt(self._variance)
         self._inv_variance = 1 / self._variance
 
+    def __str__(self):
+        s = 'IIDGaussian[ Mean: ' + str(self._mean) + ', Sigma: ' + str(self._sigma) + ']'
+        return s
