@@ -1,7 +1,7 @@
 from .iid_gaussian import IIDGaussian
 
 GMM_INITIAL_WEIGHT = 1
-GMM_INITIAL_VARIANCE = 6
+GMM_INITIAL_VARIANCE = 6.0
 
 
 class RGBPixelProcess:
@@ -54,7 +54,7 @@ class RGBPixelProcess:
 
                 best_matching_weight, best_matching_gaussian = self._mixture[best_matching_gaussian_idx]
 
-                best_matching_gaussian.partial_fit(x, lr=lr)
+                best_matching_gaussian.partial_fit(x, 0.75)
 
                 total_weight = 0.0
 
@@ -81,15 +81,6 @@ class RGBPixelProcess:
         for gaus in background_dist:
             if gaus.mahalanobis_distance_between(x) < 2.5:
                 return True
-
-
-        #print("----")
-        #print(self)
-        #print(','.join(map(lambda x: str(x),background_dist)))
-        #print(x)
-        #print("----")
-
-        return False
 
     def __str__(self):
         s = 'RGBPixelProcess[' + ','.join(map(lambda x: 'w:' + str(x[0]) + ', gaus:' + str(x[1]),self._mixture)) + ']'

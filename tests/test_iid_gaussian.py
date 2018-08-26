@@ -1,23 +1,25 @@
 import unittest
 from segmentizer.model import IIDGaussian
 import numpy as np
+import time
 
 
 class IDDGaussianTest(unittest.TestCase):
 
     def test_pdf(self):
 
-        test_cases = [
-            # Mean, Variance, x, Expected density
-            ([5, 5, 5], 6, [1, 1, 1], 7.912712643729114e-05),
-            ([5, 5, 5], 6, [0, 0, 0], 8.33993776829909e-06),
-            ([5, 9, 2], 6, [0, 0, 0], 4.5130544270661724e-07)
-        ]
+         test_cases = [
+             # Mean, Variance, x, Expected density
+             ([5, 5, 5], 6, [1, 1, 1], 7.912712643729114e-05),
+             ([5, 5, 5], 6, [0, 0, 0], 8.33993776829909e-06),
+             ([5, 9, 2], 6, [0, 0, 0], 4.5130544270661724e-07)
+         ]
 
-        for mean, variance, x, expected_density in test_cases:
-            gaussian = IIDGaussian(mean, variance)
-            density = gaussian.pdf(x)
-            assert density == expected_density
+         for mean, variance, x, expected_density in test_cases:
+             gaussian = IIDGaussian(mean, variance)
+             density = gaussian.pdf(x)
+             assert density == expected_density
+
 
     def test_mahalanobis(self):
 
@@ -29,11 +31,12 @@ class IDDGaussianTest(unittest.TestCase):
             ([5, 9, 1], 2, [1, 8, 3], 3.24037034920393),
         ]
 
+
         for mean, variance, x, expected_distance in test_cases:
+            variance = variance
             gaussian = IIDGaussian(mean, variance)
             distance = gaussian.mahalanobis_distance_between(x)
             assert distance == expected_distance
-
 
 if __name__ == '__main__':
     unittest.main()

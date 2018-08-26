@@ -1,6 +1,80 @@
 import math
+from numba import jit, float64, jitclass
+import numba
+import numpy as np
 
 
+@jit(float64(float64[:], float64, float64[:]), nopython=True)
+def _mahalanobis_distance_between(mean, inv_variance, x):
+
+    # DIFF = x-mu
+    diff = x-mean
+
+    # A = DIFF^T * COV^-1
+    a = diff * inv_variance
+
+    # B = A * (X-MU)
+    b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
+
+    # MAHALANOBIS = sqrt(B)
+    mahalanobis = math.sqrt(b)
+
+    return mahalanobis
+
+
+@jit(float64(float64[:], float64, float64, float64[:]), nopython=True)
+def _pdf(mean, variance, inv_variance, x):
+
+    # DIFF = x-mu
+    diff = x-mean
+
+    # A = DIFF^T * COV^-1
+    a = [diff[0] * inv_variance, diff[1] * inv_variance, diff[2] * inv_variance]
+
+    # B = A * (X-MU)
+    b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
+
+    # EXPONENT = -0.5 * B
+    exp = -0.5 * b
+
+    # C = (2*pi)^(3/2) * |COV|^(1/2) = (SIGMA^3)^(1/2)
+    c = (2 * math.pi) ** (3 / 2) * variance ** (3 / 2)
+
+    # pdf = 1 / C * e ^ EXPONENT
+    pdf = 1 / c * math.exp(exp)
+
+    return pdf
+
+
+@jit(float64[:](float64, float64[:], float64[:]), nopython=True)
+def _partial_fit_mean(roh, mean, x):
+    return (1 - roh) * mean + roh * x
+
+
+@jit(float64(float64, float64[:], float64, float64[:]), nopython=True)
+def _partial_fit_variance(roh, mean, variance, x):
+
+    # DIFF = X - mu
+    diff = x - mean
+
+    # A = DIFF^T * DIFF
+    a = np.dot(diff, diff)
+
+    # VAR = (1-roh) * VAR + roh * A
+    new_variance = (1 - roh) * variance + roh * a
+
+    return new_variance
+
+
+spec = [
+    ('_mean', float64[:]),               # a simple scalar field
+    ('_variance', float64),          # an array field
+    ('_sigma', float64),          # an array field
+    ('_inv_variance', float64),          # an array field
+]
+
+
+@jitclass(spec)
 class IIDGaussian:
 
     def __init__(self, mean, variance):
@@ -11,41 +85,11 @@ class IIDGaussian:
 
     def mahalanobis_distance_between(self, x):
 
-        # DIFF = x-mu
-        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
-
-        # A = DIFF^T * COV^-1
-        a = [diff[0] * self._inv_variance, diff[1] * self._inv_variance, diff[2] * self._inv_variance]
-
-        # B = A * (X-MU)
-        b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
-
-        # MAHALANOBIS = sqrt(B)
-        mahalanobis = math.sqrt(b)
-
-        return mahalanobis
+        return _mahalanobis_distance_between(self._mean, self._inv_variance, x)
 
     def pdf(self, x):
 
-        # DIFF = x-mu
-        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
-
-        # A = DIFF^T * COV^-1
-        a = [diff[0] * self._inv_variance, diff[1] * self._inv_variance, diff[2] * self._inv_variance]
-
-        # B = A * (X-MU)
-        b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
-
-        # EXPONENT = -0.5 * B
-        exp = -0.5 * b
-
-        # C = (2*pi)^(3/2) * |COV|^(1/2) = (SIGMA^3)^(1/2)
-        c = (2*math.pi)**(3/2) * self._variance ** (3/2)
-
-        # pdf = 1 / C * e ^ EXPONENT
-        pdf = 1/c * math.exp(exp)
-
-        return pdf
+        return _pdf(self._mean, self._variance, self._inv_variance, x)
 
     def get_mean(self):
         return self._mean
@@ -56,24 +100,20 @@ class IIDGaussian:
     def get_sigma(self):
         return self._sigma
 
-    def partial_fit(self, x, lr=0.75):
+    def partial_fit(self, x, lr):
 
         roh = lr * self.pdf(x)
 
         # mu = (1-roh) * mu + roh * X
-        self._mean = [(1-roh) * self._mean[0] + roh*x[0], (1-roh) * self._mean[1] + roh*x[1], (1-roh) * self._mean[2] + roh*x[2]]
+        new_mean = _partial_fit_mean(roh, self._mean, x)
 
-        # DIFF = X - mu
-        diff = [x[0] - self._mean[0], x[1] - self._mean[1], x[2] - self._mean[2]]
+        new_variance = _partial_fit_variance(roh, self._mean, self._variance, x)
 
-        # A = DIFF^T * DIFF
-        a = diff[0]*diff[0]+diff[1]*diff[1]+diff[2]*diff[2]
+        self._variance = new_variance
+        self._sigma = math.sqrt(new_variance)
+        self._inv_variance = 1 / new_variance
+        self._mean = new_mean
 
-        # VAR = (1-roh) * VAR + roh * A
-        self._variance = (1-roh) * self._variance + roh * a
-
-        self._sigma = math.sqrt(self._variance)
-        self._inv_variance = 1 / self._variance
 
     def __str__(self):
         s = 'IIDGaussian[ Mean: ' + str(self._mean) + ', Sigma: ' + str(self._sigma) + ']'

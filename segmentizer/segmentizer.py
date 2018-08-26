@@ -15,11 +15,20 @@ class Segmentizer:
         self._width = width
         self._height = height
 
-    def fit(self, image):
+    def fit_and_predict(self, image):
+
+        background = []
 
         for i in range(self._height):
+            row = []
             for j in range(self._width):
-                self._image_model[i][j].fit(image[i][j].tolist())
+                x = image[i][j].astype('float64')
+                self._image_model[i][j].fit(x)
+                row.append(0 if self._image_model[i][j].is_background_pixel(x) else 1)
+
+            background.append(row)
+
+        return background
 
 
     def classify_image(self, image):
@@ -29,7 +38,7 @@ class Segmentizer:
         for i in range(self._height):
             row = []
             for j in range(self._width):
-                row.append(0 if self._image_model[i][j].is_background_pixel(image[i][j].tolist()) else 1)
+                row.append(0 if self._image_model[i][j].is_background_pixel(image[i][j].astype('float64')) else 1)
 
             background.append(row)
 
