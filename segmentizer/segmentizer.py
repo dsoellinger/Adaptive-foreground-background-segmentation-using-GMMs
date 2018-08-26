@@ -1,45 +1,34 @@
 from .model import RGBPixelProcess
+import numpy as np
+
 
 class Segmentizer:
 
     def __init__(self, width, height):
 
-        self._image_model = []
-        for h in range(height):
-            row = []
-            for r in range(width):
-                row.append(RGBPixelProcess(3))
-
-            self._image_model.append(row)
-
+        self._image_model = [[RGBPixelProcess(3) for _ in range(width)] for _ in range(height)]
         self._width = width
         self._height = height
 
-    def fit_and_predict(self, image):
+    def fit(self, image, init_weight=0.03, init_variance=36.0, lr=0.2):
+        for i in range(self._height):
+            for j in range(self._width):
+                self._image_model[i][j].fit(image[i,j], init_weight, init_variance, lr)
+        return image
+
+    def fit_and_predict(self, image, init_weight=0.03, init_variance=36.0, lr=0.2):
 
         background = []
 
         for i in range(self._height):
             row = []
             for j in range(self._width):
-                x = image[i][j].astype('float64')
-                self._image_model[i][j].fit(x)
-                row.append(0 if self._image_model[i][j].is_background_pixel(x) else 1)
+                x = image[i,j]
+                self._image_model[i][j].fit(x, init_weight, init_variance, lr)
+                row.append(np.array([0,0,0]) if self._image_model[i][j].is_background_pixel(x) else x)
 
             background.append(row)
 
         return background
 
 
-    def classify_image(self, image):
-
-        background = []
-
-        for i in range(self._height):
-            row = []
-            for j in range(self._width):
-                row.append(0 if self._image_model[i][j].is_background_pixel(image[i][j].astype('float64')) else 1)
-
-            background.append(row)
-
-        return background

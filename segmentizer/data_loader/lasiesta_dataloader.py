@@ -5,13 +5,10 @@ from scipy.misc import imread
 
 class LASIESTADataLoader(DataLoader):
 
-    _base_path = None
-    _frames = None
-    _next_frame_idx = 0
-
     def __init__(self, path):
 
         self._base_path = path
+        self._next_frame_idx = 0
 
         files = os.listdir(path)
 
@@ -29,3 +26,9 @@ class LASIESTADataLoader(DataLoader):
             return frame
 
         return None
+
+    def set_next_frame_idx(self, idx):
+        self._next_frame_idx = idx
+
+    def get_nr_of_frames(self):
+        return len(self._frames)
