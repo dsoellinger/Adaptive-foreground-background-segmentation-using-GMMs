@@ -18,7 +18,7 @@ spec = [
 ]
 
 
-def _background_map_conversion(rgb):
+def background_map_conversion(rgb):
 
     # Background
     if rgb == [0,0,0]:
@@ -40,11 +40,24 @@ def _background_map_conversion(rgb):
     if rgb == [255, 255, 255]:
         return False
 
-    # Uncertainty pixels.
+    # Uncertain pixels
     if rgb == [128, 128, 128]:
-        return False
+        return [128, 128, 128]
 
     return None
+
+
+def remove_uncertain_pixels(predicted_background, groundtruth):
+
+    new_predicted_background = []
+    new_groundtruth = []
+
+    for i, val_groundtruth in enumerate(groundtruth):
+        if val_groundtruth != [128, 128, 128]:
+            new_groundtruth.append(val_groundtruth)
+            new_predicted_background.append(predicted_background[i])
+
+    return new_predicted_background, new_groundtruth
 
 
 def evaluate_performance(params):
@@ -60,16 +73,17 @@ def evaluate_performance(params):
 
     for i, (original_frame, label_frame) in enumerate(data_loader):
 
-        if i == 5:
+        if i == 50:
             break
 
         predicted_background = video_segmentizer.fit_and_predict(original_frame)
 
         label_frame = label_frame.tolist()
-        label_frame = [[_background_map_conversion(rgb) for rgb in row ] for row in label_frame]
+        label_frame = [[background_map_conversion(rgb) for rgb in row] for row in label_frame]
         y_true += list(chain.from_iterable(label_frame))
-
         y_pred += list(chain.from_iterable(predicted_background))
+
+        y_pred, y_true = remove_uncertain_pixels(y_pred, y_true)
 
         score = f1_score(y_true, y_pred)
 
