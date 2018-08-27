@@ -4,9 +4,17 @@ from sklearn.metrics import f1_score
 from itertools import chain
 from multiprocessing import Pool
 
+DB_DIR = '../../datasets/'
 
 spec = [
-    ('I_SI_01', '/Users/dsoellinger/Downloads/I_SI_01', '/Users/dsoellinger/Downloads/I_SI_01-GT')
+    ('I_BS_01', DB_DIR + 'I_BS_01', DB_DIR + 'I_BS_01-GT'),
+    ('I_CA_01', DB_DIR + 'I_CA_01', DB_DIR + 'I_CA_01-GT'),
+    ('I_IL_01', DB_DIR + 'I_IL_01', DB_DIR + 'I_IL_01-GT'),
+    ('I_MB_01', DB_DIR + 'I_MB_01', DB_DIR + 'I_MB_01-GT'),
+    ('I_MC_01', DB_DIR + 'I_MC_01', DB_DIR + 'I_MC_01-GT'),
+    ('I_OC_01', DB_DIR + 'I_OC_01', DB_DIR + 'I_OC_01-GT'),
+    ('I_SI_01', DB_DIR + 'I_SI_01', DB_DIR + 'I_SI_01-GT'),
+    ('I_SM_01', DB_DIR + 'I_SM_01', DB_DIR + 'I_SM_01-GT')
 ]
 
 
@@ -73,9 +81,10 @@ def evaluate_performance(params):
 pool = Pool(processes=10)
 scores = list(pool.map(evaluate_performance, spec))
 print(scores)
+
 f = open('scores.txt', 'wt')
 for name, score in scores:
-    f.write(name + ';' + str(score))
+    f.write(name + ';' + str(score) + '\n')
     f.flush()
 
 
