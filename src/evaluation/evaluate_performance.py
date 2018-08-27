@@ -49,21 +49,21 @@ def _background_map_conversion(rgb):
 
 def evaluate_performance(params):
 
-    name, groundtruth_path, label_path = params
+    name, original_path, label_path = params
 
     y_true = []
     y_pred = []
 
     video_segmentizer = Segmentizer(352, 288)
 
-    data_loader = LASIESTADataLoader(groundtruth_path, label_path)
+    data_loader = LASIESTADataLoader(original_path, label_path)
 
-    for i, (groundtruth_frame, label_frame) in enumerate(data_loader):
+    for i, (original_frame, label_frame) in enumerate(data_loader):
 
-        if i == 1:
+        if i == 5:
             break
 
-        predicted_background = video_segmentizer.fit_and_predict(groundtruth_frame)
+        predicted_background = video_segmentizer.fit_and_predict(original_frame)
 
         label_frame = label_frame.tolist()
         label_frame = [[_background_map_conversion(rgb) for rgb in row ] for row in label_frame]
