@@ -32,12 +32,13 @@ class LASIESTADataLoader(DataLoader):
             path_to_original_frame = os.path.join(self._original_path, self._original_files[self._next_frame_idx])
             original_frame = imread(path_to_original_frame)
 
-            self._next_frame_idx += 1
-
             if self._label_path is not None:
                 path_to_label_frame = os.path.join(self._label_path, self._label_files[self._next_frame_idx])
                 label_frame = imread(path_to_label_frame)
+                self._next_frame_idx += 1
                 return original_frame, label_frame
+
+            self._next_frame_idx += 1
 
             return original_frame
 
