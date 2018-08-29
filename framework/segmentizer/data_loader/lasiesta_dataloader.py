@@ -6,11 +6,12 @@ import sys
 
 class LASIESTADataLoader(DataLoader):
 
-    def __init__(self, original_path, label_path=None):
+    def __init__(self, original_path, label_path=None, name=None):
 
         self._original_path = original_path
         self._label_path = label_path
         self._next_frame_idx = 0
+        self._name = name
 
         original_files = os.listdir(original_path)
         original_files.sort(key=lambda file: int(file[file.find('-') + 1:file.find('.')]))
@@ -50,6 +51,9 @@ class LASIESTADataLoader(DataLoader):
 
     def get_nr_of_frames(self):
         return len(self._original_files)
+
+    def get_name(self):
+        return self._name
 
     def __iter__(self):
         return self
