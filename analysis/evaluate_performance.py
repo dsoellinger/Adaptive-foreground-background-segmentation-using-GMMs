@@ -4,7 +4,7 @@ from sklearn.metrics import f1_score
 from itertools import chain
 from multiprocessing import Pool
 
-DB_DIR = '../../datasets/'
+DB_DIR = '../datasets/'
 
 spec = [
     ('I_BS_01', DB_DIR + 'I_BS_01', DB_DIR + 'I_BS_01-GT'),
@@ -73,9 +73,6 @@ def evaluate_performance(params):
 
     for i, (original_frame, label_frame) in enumerate(data_loader):
 
-        if i == 50:
-            break
-
         predicted_background = video_segmentizer.fit_and_predict(original_frame)
 
         label_frame = label_frame.tolist()
@@ -100,5 +97,3 @@ f = open('scores.txt', 'wt')
 for name, score in scores:
     f.write(name + ';' + str(score) + '\n')
     f.flush()
-
-
