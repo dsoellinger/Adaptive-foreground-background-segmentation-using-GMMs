@@ -16,7 +16,7 @@ Deep learning enthusiast might now suggest the use of novel neural networks like
 The goal of this project is to develop a solution for adaptive foreground-background video segmentation and to assess its performance. The solution is based on the algorithm introduced by Stauffer and Grimson [4].
 The model's performance gets evaluated on the LASIESTA [5] dataset. A good model should finally be able to accurately segment any video into a foreground or background regions after "seeing" a few frames and actively adapt itself to scenery changes. Ideally, the model should be able to perform this segmentation task in real-time.
 
-### 3. LASIESTA dataset
+### 3. Dataset
 
 As already mentioned the LASIESTA [5] dataset is used to train and test the implemented model. The dataset comprises of 28 different scenes captured in different indoor and outdoor environments. However, in course of this project we focus on indoor scenes only. Scenes cover a broad spectrum of image distortions we may encounter in real-world like illumination changes, occlusion or shadows.  
 
@@ -78,14 +78,31 @@ variance for "background" distributions when a static, persistent object is visi
 or an increase in variance of an existing distribution. Also, the variance of the moving object
 is expected to remain larger than a background pixel until the moving object stops.
 
+### 5. Metrics
 
-### 5. Analysis
+A good way to assess the quality of the developed model is the F1-score [6] [7]. It's defined as the harmonic average of the precision and recall, where an F1 score reaches its best value at 1 and worst at 0.
 
-#### 5.1. Data Exploration
+<center>$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$</center>
+
+<center>$\text{Precision} = \frac{\text{True Positive}}{\text{True Positive} + \text{False Positive}}$</center>
+
+<center>$\text{Recall} = \frac{\text{True Positive}}{\text{True Positive} + \text{False Negative}}$</center>
+
+In our problem domain _True Positive_, _False Positive_, _False Negative_ and _False Positive_ can be understood as:
+
+- **False Positive:** Classified as background pixel, but it's a foreground pixel
+- **False Negative:** Classified as foreground pixel, but it's a background pixel
+- **True Positive:**  Classified as background pixel and it's a background pixel
+- **True Negative:**  Classified as foreground pixel and it's a foreground pixel
+
+
+### 6. Analysis
+
+#### 6.1. Data Exploration
 
 We already discussed how GMMs can be used to segment video frames. In Layman's term we could say that our expectation is to find groups in a series of pixel values. Each group comprises of similar pixel values. If our assumption is correct, background / foreground pixel values tend to be in different categories. Therefore, let's see if such a behavior is evident in our dataset.
 
-##### 5.1.1. Overall distribution per category
+##### 6.1.1. Overall distribution per category
 
 First, we look the overall distribution of pixel values by category (foreground/background) across the different scenes of the dataset. For instance, we simply take the values of all background pixels and compute statistical descriptors like mean and standard deviation.
 
@@ -108,13 +125,21 @@ The following tables show the result for three out of the eight scenarios we ana
 | Std                    |  62.39        | 49.09     | 62.57    | 60.28          |  37.96      | 60.40      | 57.85         | 32.85      | 58.10     |
 
 
-##### 5.1.1. Distribution per pixel process
+##### 6.1.2. Distribution per pixel process
 
-#### 5.2. Data Visualization
+#### 6.2. Data Visualization
 
-### 6. Methodology
+#### 6.4. Benchmark Model
 
-#### 6.1. Stauffer and Grimson's algorithm
+Fortunately, benchmarks are provided on the website of the LASIESTA dataset. This benchmarks illustrate the obtained F1-score for eight different background subtraction algorithms including the algorithm suggested by Stauffer. Scores are provided for individual scenario as well as an average F1-score.
+
+Unfortunately, the website is not clear on how these score were obtained meaning that it's not fully clear whether they first trained the GMM on the whole scenario to get a background reference image or if the updated the model framewise while computing the score. As the second approach would be similar to a real-world setting where we gradually have to update our model, it seems the better approach for evaluating this algorithm.
+
+
+
+### 7. Methodology
+
+#### 7.1. Stauffer and Grimson's algorithm
 
 In section 4 we already discussed the general idea of using GMM based algorithms for image segmentation. However, there as still things we have to think about before can start to implement such an algorithm.
 
@@ -150,6 +175,154 @@ As we know which Gaussian best represent background regions, we can now use them
 Such a proximity measure is the **Mahalanobis distance**. It measures how many standard deviations away a point is from the mean $\mu$.
 
 <center>$D(x) = \sqrt{(x-\mu)^T \Sigma^-1 (x - \mu)}$</center>
+
+#### 7.2. Pseudocode
+
+The paper [4] explains the basic idea of the algorithm. However, it lacks important details required to implement the algorithm. For example, it does not state how parameters like learning rate or the initial variance of a Gaussian should be initialized. Furthermore, it's not clear on whether all matching Gaussians have to be updated or just the first matching Gaussians.
+
+After reading various research papers the right approach seems to only update the likeliest Gaussian. This is because we apply a winner-takes-it-all update strategy.
+
+The paper defines the weight update rule as follows:
+
+$w_{k,t} = (1-\alpha) w_{k,t-1} + \alpha M_{k,t}$
+
+The winner-takes-it-all strategy choose $M_{k,t} = 1$ for the best fitting Gaussian and $M_{k,t} = 0$ for all other ones.
+
+This results in the following method that updates the GMM after seeing a new pixel value:
+
+```
+
+Given: 
+A GMM with k Gaussians sorted in desc order according to their ω/σ ratio.
+
+def fit(X):
+
+   best_matching_gaussian = None
+
+   For each Gaussian i:
+      If the Mahalanobis-Dist(i,X) < 2.5 and best_matching_gaussian is None:
+         Update k using Gaussian update rule
+         w_i = (1 - lr) * w_i + lr
+         best_matching_gaussian = I
+      Else:
+         w_i = (1 - lr) * w_i
+         
+    If best_matching_gaussian is None:
+        // Replace last gaussian with a new one 
+        GMM[k-1] = Gaussian(X, initial variance)
+          
+   // Re-normalize the weights
+   For each Gaussian k:
+      w_k = w_k / sum(w) 
+   
+   Sort Gaussian in desc order according to their ω/σ ratio.
+   
+```
+
+#### 7.3. Implementation
+
+In this section, we take a closer look at the actual implementation. We developed a framework that takes frames of a video and returns a segment image as output.
+
+##### Segmentizer
+
+A video can be segmentized by creating a Segmentizer object. The `fit_and_predict` method takes a numpy image as input and returns a two dimensional segment map.
+
+Each pixel value of the segment map can either be `True` or `False`. `True` marks a background pixel and `False` marks a foreground pixel.
+
+As we can see in the code, the `fit_and_predict` method maintains an `RGBPixelProcess` object which essentially holds a Gaussian mixture model that characterizes a pixel process.
+
+```
+class Segmentizer:
+
+    def __init__(self, width, height):
+
+        self._image_model = [[RGBPixelProcess(3) for _ in range(width)] for _ in range(height)]
+        self._width = width
+        self._height = height
+        
+    ...
+
+    def fit_and_predict(self, image, init_weight=0.03, init_variance=36.0, lr=0.005):
+
+        background = []
+
+        for i in range(self._height):
+            row = []
+            for j in range(self._width):
+                x = image[i,j]
+                self._image_model[i][j].fit(x, init_weight, init_variance, lr)
+                row.append(self._image_model[i][j].is_background_pixel(x))
+
+            background.append(row)
+
+        return background
+```
+
+##### RGBPixelProcess
+
+The pixel process maintains a Gaussian mixture model that models the pixel process. Furthermore, it's able to predict whether a certain pixel value is a background or foreground pixel.
+
+```
+ class RGBPixelProcess:
+
+    ...
+    
+    def _init_mixture(self):
+        self._mixture = []
+        for _ in range(self._n_clusters):
+            self._mixture.append((0, IIDGaussian(np.array([0.,0.,0.]), 1.)))
+
+    def _get_background_distributions(self, t=0.7):
+
+        sum_weight = 0.0
+        background_distributions = []
+
+        for weight, gaussian in self._mixture:
+            sum_weight += weight
+            background_distributions.append(gaussian)
+            if sum_weight > t:
+                return background_distributions
+
+        return []
+    
+    ...
+
+    def fit(self, x, init_weight, init_variance, lr):
+
+        best_matching_gaussian_idx = None
+        total_weight = 0.0
+
+        for i, (w, gaus) in enumerate(self._mixture):
+
+            # One the first (best) match gets the "treat"
+            if gaus.mahalanobis_distance_between(x) < 2.5 and best_matching_gaussian_idx is None:
+                gaus.partial_fit(x, lr)
+                new_weight = (1 - lr) * w + lr
+                best_matching_gaussian_idx = i
+            else:
+                new_weight = (1 - lr) * w
+
+            self._mixture[i] = (new_weight, gaus)
+            total_weight += new_weight
+
+        # Replace last gaussian (w/sigma) if no match was found
+        if best_matching_gaussian_idx is None:
+            total_weight = total_weight - self._mixture[self._n_clusters-1][0] + init_weight
+            self._mixture[self._n_clusters-1] = (init_weight, IIDGaussian(x.astype('float64'), init_variance))
+
+        self._normalize_weights(total_weight)
+
+        self._mixture.sort(key=lambda x: x[0] / x[1].get_sigma(), reverse=True)
+
+    def is_background_pixel(self, x):
+
+        background_dist = self._get_background_distributions()
+        for gaus in background_dist:
+            if gaus.mahalanobis_distance_between(x) < 2.5:
+                return True
+        return False
+
+```
 
 ### References
 
