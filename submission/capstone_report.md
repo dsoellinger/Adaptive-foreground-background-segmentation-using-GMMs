@@ -102,7 +102,7 @@ In our problem domain _True Positive_, _False Positive_, _False Negative_ and _F
 
 We already discussed how GMMs can be used to segment video frames. In Layman's term we could say that our expectation is to find groups in a series of pixel values. Each group comprises of similar pixel values. If our assumption is correct, background / foreground pixel values tend to be in different categories. Therefore, let's see if such a behavior is evident in our dataset.
 
-##### 6.1.1. Overall distribution per category
+##### Overall distribution per category
 
 First, we look the overall distribution of pixel values by category (foreground/background) across the different scenes of the dataset. For instance, we simply take the values of all background pixels and compute statistical descriptors like mean and standard deviation.
 
@@ -124,8 +124,6 @@ The following tables show the result for three out of the eight scenarios we ana
 | Mean                   |  99.93        | 76.47     | 100.38   | 97.59          | 57.14       | 98.36      | 91.49         | 59.73      | 92.10     |
 | Std                    |  62.39        | 49.09     | 62.57    | 60.28          |  37.96      | 60.40      | 57.85         | 32.85      | 58.10     |
 
-
-##### 6.1.2. Distribution per pixel process
 
 #### 6.2. Data Visualization
 
@@ -262,67 +260,180 @@ class Segmentizer:
 
 The pixel process maintains a Gaussian mixture model that models the pixel process. Furthermore, it's able to predict whether a certain pixel value is a background or foreground pixel.
 
-```
- class RGBPixelProcess:
+**Initializing the GMM**
 
-    ...
-    
-    def _init_mixture(self):
-        self._mixture = []
-        for _ in range(self._n_clusters):
-            self._mixture.append((0, IIDGaussian(np.array([0.,0.,0.]), 1.)))
+A tricky question was to figure out how the GMM should be initialized. Initialization could be done in various ways. For instance:
 
-    def _get_background_distributions(self, t=0.7):
+- Don't perform any initialization at all and simply add the first Gaussian as soon as we encounter the first pixel value
+- Initialize the mixture with k Gaussian with arbitrary mean and variance
+- Force the user to provide multiple frames for initialization
 
-        sum_weight = 0.0
-        background_distributions = []
-
-        for weight, gaussian in self._mixture:
-            sum_weight += weight
-            background_distributions.append(gaussian)
-            if sum_weight > t:
-                return background_distributions
-
-        return []
-    
-    ...
-
-    def fit(self, x, init_weight, init_variance, lr):
-
-        best_matching_gaussian_idx = None
-        total_weight = 0.0
-
-        for i, (w, gaus) in enumerate(self._mixture):
-
-            # One the first (best) match gets the "treat"
-            if gaus.mahalanobis_distance_between(x) < 2.5 and best_matching_gaussian_idx is None:
-                gaus.partial_fit(x, lr)
-                new_weight = (1 - lr) * w + lr
-                best_matching_gaussian_idx = i
-            else:
-                new_weight = (1 - lr) * w
-
-            self._mixture[i] = (new_weight, gaus)
-            total_weight += new_weight
-
-        # Replace last gaussian (w/sigma) if no match was found
-        if best_matching_gaussian_idx is None:
-            total_weight = total_weight - self._mixture[self._n_clusters-1][0] + init_weight
-            self._mixture[self._n_clusters-1] = (init_weight, IIDGaussian(x.astype('float64'), init_variance))
-
-        self._normalize_weights(total_weight)
-
-        self._mixture.sort(key=lambda x: x[0] / x[1].get_sigma(), reverse=True)
-
-    def is_background_pixel(self, x):
-
-        background_dist = self._get_background_distributions()
-        for gaus in background_dist:
-            if gaus.mahalanobis_distance_between(x) < 2.5:
-                return True
-        return False
+I finally ended up with pre-initializing all Gaussians with mean $[0,0,0]$ and variance $1$ (to avoid a divisions by zero). The weight's of all Gaussians get set to zero. In practice, mean $[0,0,0]$ and variance $1$ guarantees that the first Gaussian gets replace once we obtain the first pixel value. The new distribution is likely to fit the pixel process since it's mean will then be initialized with the pixels value.
 
 ```
+def _init_mixture(self):
+	self._mixture = []
+	for _ in range(self._n_clusters):
+   		self._mixture.append((0, IIDGaussian(np.array([0.,0.,0.]), 1.)))
+```
+    
+**Fit method**    
+    
+Next, we take a closer look at the fit method which was already discussed in section 7.2.
+Again, we had to find good values for the learning rate (lr), the variance (init\_variance) and weight (init\_weight) new Gaussian get initialized with.
+
+It turned out that setting **lr = 0.005**, **initial variance = 36.0** and **weight = 0.03** works well in practice.
+
+```
+def fit(self, x, init_weight, init_variance, lr):
+
+	best_matching_gaussian_idx = None
+	total_weight = 0.0
+
+	for i, (w, gaus) in enumerate(self._mixture):
+
+		# One the first (best) match gets the "treat"
+		if gaus.mahalanobis_distance_between(x) < 2.5 and best_matching_gaussian_idx is None:
+			gaus.partial_fit(x, lr)
+   			new_weight = (1 - lr) * w + lr
+			best_matching_gaussian_idx = i
+     	else:
+       	new_weight = (1 - lr) * w
+
+			self._mixture[i] = (new_weight, gaus)
+  			total_weight += new_weight
+
+	# Replace last gaussian (w/sigma) if no match was found
+	if best_matching_gaussian_idx is None:
+		total_weight = total_weight - self._mixture[self._n_clusters-1][0] + init_weight
+		self._mixture[self._n_clusters-1] = (init_weight, IIDGaussian(x.astype('float64'), init_variance))
+
+ 	self._normalize_weights(total_weight)
+
+	self._mixture.sort(key=lambda x: x[0] / x[1].get_sigma(), reverse=True)
+```   
+
+**Identifying background distributions**
+
+We set the threshold **t=0.7**. This value determines how many distributions are considered as background distributions. The higher t is, the more distributions we consider as background distributions. Section 7.1 (Estimating the background model) shows the formula the implementation is based on.
+
+```   
+def _get_background_distributions(self, t=0.7):
+
+	sum_weight = 0.0
+	background_distributions = []
+
+	for weight, gaussian in self._mixture:
+  		sum_weight += weight
+ 		background_distributions.append(gaussian)
+       if sum_weight > t:
+			return background_distributions
+    return []
+    
+    
+def is_background_pixel(self, x):
+
+	background_dist = self._get_background_distributions()
+	for gaus in background_dist:
+ 		if gaus.mahalanobis_distance_between(x) < 2.5:
+       	return True
+    return False
+
+``` 
+
+##### IIDGaussian
+
+Now, we turn our attention to the class I spent the most time on. `IIDGaussian` represents a three-dimensional Gaussian assuming that the data are independently and identically distributed. The IID assumption is made due to the fact that it reduces the computational complexity significantly. Most matrix computations become a lot easier if we are allowed to apply the IID assumption.
+
+**Probability density function**  
+
+Since we are required to compute the Gaussian's probability density to had to implement such a function. Initially, I tried to reuse function implemented in Numpy and Scikit-Learn. However, it turned out that these pre-implemented functions cannot make use of the IID assumption meaning that they were significantly slower than my IID-optimized code.
+
+The following snippet illustrates how it's possible to compute the probability density by making use of the IID assumption.
+
+``` 
+def pdf(self, x):
+
+	# DIFF = x-mu
+  	diff = x - self._mean
+
+  	# A = DIFF^T * COV^-1
+	a = diff * self._inv_variance
+
+    # B = A * (X-MU)
+ 	b = a[0] * diff[0] + a[1] * diff[1] + a[2] * diff[2]
+
+    # EXPONENT = -0.5 * B
+   	exp = -0.5 * b
+
+ 	# C = (2*pi)^(3/2) * |COV|^(1/2) = (VARIANCE^3)^(1/2)
+    c = math.pow(2 * math.pi * self._variance, 3/2)
+
+	# pdf = 1 / C * e ^ EXPONENT
+	pdf = 1 / c * math.exp(exp)
+
+	return pdf
+``` 
+   
+ **Fitting a Gaussian**
+ 
+The following code shows how to fit the Gaussian to a new pixel value. Again, we make use of the IID assumption.
+
+```
+def partial_fit(self, x, lr):
+	roh = lr * self.pdf(x)
+
+	# mu = (1-roh) * mu + roh * X
+	new_mean = (1 - roh) * self._mean + roh * x
+
+    # DIFF = X - mu
+    diff = x - self._mean
+
+    # A = DIFF^T * DIFF
+    a = diff[0]* diff[0] + diff[1]*diff[1] + diff[2]*diff[2]
+
+    # VAR = (1-roh) * VAR + roh * A
+    new_variance = (1 - roh) * self._variance + roh * a
+
+    self._variance = new_variance
+    self._sigma = math.sqrt(new_variance)
+    self._inv_variance = 1 / new_variance
+    self._mean = new_mean
+```
+
+#### 7.4. Refinement
+
+One of the major issue I ran into was the implementation's performance. I've implemented the algorithm in Python and it turned out to be a really bad choice for implementing an algorithm that requires near "real-time" capabilities. One of the major reasons why such algorithms usually get implemented in C or C++. Python is significantly slower than these programming languages since the code needs to be interpreted first. Furthermore, it doesn't allow just-in-time compilation and running multiple threads in parallel is often not faster due to GIL.
+
+However, there were still a few things that could be done to make the code run a little bit faster. I started to profile the code using `cProfile`. It provides you with detailed information about how much time is spent in each function.
+
+`python3 -m cProfile -s cumtime test.py`
+
+It turned out that must of the time is spent with matrix computations and therefore I started to think about ways to optimize these computations. As already mentioned, it turned out that replacing some Numpy / Scikit-Learn functions by my own implementation (making use of the IID assumption) can decrease the runtime of the algorithm significantly. However, still, I wasn't happy with the result.
+
+Next, I came across a framework called Numba [10]. It allows you to speed up applications by means of just-in-time compilation. Simple functions, typically array-oriented and math-heavy functions, can be annotated and then get compiled to native machine instructions.
+
+And indeed, this turned out to speed up the application significantly. We are still not even close to real-time, but the speedup is still remarkable.
+
+**Time to process 10 frames:**
+
+**With Numba:**  18.79 sec $\hspace{4cm}$ **Without Numba:** 34.89 sec
+
+### 8. Result
+
+As stated in section 5 we evaluated the algorithm's performance on eight different scenarios by means of the F1-score.
+
+The following table shows the result for each category:
+
+|                           |  I\_BS\_01   |  I\_CA\_01    | I\_IL\_01    |  I\_MB\_01  | I\_MC\_01 | I\_OC\_01 | I\_SI\_01  | I\_SM\_01  |
+|---------------------------|--------------|---------------|--------------|-------------|-----------|-----------|------------|------------|
+| **F1-Score (our model)**  |    0.964     |   0.97        |  0.862       | 0.982       | 0.690     |   0.99    |   0.989    |  0.72      |
+| **F1-Score (benchmark)**  |    0.355     |   0.8811      |  0.2392      | 0.8342      |  -        |   0.95    |   0.8409   |    -       |
+
+
+According to these numbers our model seems to be far better than the benchmark model. However, it seems to me that we shouldn't trust this comparison. Unfortunately, the website doesn't state based on which assumptions the benchmark got evaluated.
+
+
 
 ### References
 
@@ -339,7 +450,8 @@ Video of Human Actors, ACM Trans on Graphics 2003; 22(3):
 real-time tracking. Proc IEEE Conf on Comp Vision and Patt Recog
 (CVPR 1999) 1999; 246-252.  
 **[5]** http://www.gti.ssr.upm.es/data/LASIESTA  
-**[6]** https://en.wikipedia.org/wiki/Precision_and_recall  
+**[6]** https://en.wikipedia.org/wiki/Precision\_and\_recall  
 **[7]** https://en.wikipedia.org/wiki/F1_score  
 **[8]** A Dempster, N. Laird, and D. Rubin. Maximum likelihood from incomplete data via the EM algorithm. Journal of the Royal Statistical Society, 39 (Series B):1-38, 1977.  
-**[9]** https://github.com/dsoellinger/Background-mixture-models-for-real-time-tracking/blob/master/analysis/analysis\_numerical.ipynb
+**[9]** https://github.com/dsoellinger/Background-mixture-models-for-real-time-tracking/blob/master/analysis/analysis\_numerical.ipynb  
+**[10]** https://numba.pydata.org/
