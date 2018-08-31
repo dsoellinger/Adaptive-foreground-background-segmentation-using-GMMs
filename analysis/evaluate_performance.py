@@ -89,7 +89,7 @@ def evaluate_performance(params):
     return name, score
 
 
-pool = Pool(processes=10)
+pool = Pool(processes=2)
 scores = list(pool.map(evaluate_performance, spec))
 print(scores)
 
