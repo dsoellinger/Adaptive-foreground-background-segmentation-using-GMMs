@@ -45,7 +45,7 @@ I've built a small library that takes individual video frames as input and retur
 
 ### The implementation
 
-If you are curious and you want to see the actual implementation, I recommend to take a look at the classes `RGBPixelProcess` and `IIDGaussian`.
+If you are curious and you want to see the actual implementation, I recommend to take a look at the classes [RGBPixelProcess](https://github.com/dsoellinger/Background-mixture-models-for-real-time-tracking/blob/master/framework/segmentizer/model/rgb_pixel_process.py) and [IIDGaussian](https://github.com/dsoellinger/Background-mixture-models-for-real-time-tracking/blob/master/framework/segmentizer/model/iid_gaussian.py).
 
 ### Good to know
 
@@ -54,5 +54,5 @@ The original paper is not very detailed in terms of the original implementation.
 ### References
 
 **[1]** Stauffer C, Grimson W. Adaptive background mixture models for
-real-time tracking. Proc IEEE Conf on Comp Vision and Pattern Recognition (CVPR 1999) 1999; 246-252.  
+real-time tracking. Proc IEEE Conf on Computer Vision and Pattern Recognition (CVPR 1999) 1999; 246-252.  
 **[2]** http://www.gti.ssr.upm.es/data/LASIESTA  
