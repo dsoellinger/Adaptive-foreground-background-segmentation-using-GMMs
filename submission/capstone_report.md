@@ -20,9 +20,9 @@ The model's performance gets evaluated on the LASIESTA [5] dataset. A good model
 
 As already mentioned the LASIESTA [5] dataset is used to train and test the implemented model. The dataset comprises of 28 different scenes captured in different indoor and outdoor environments. However, in course of this project we focus on indoor scenes only. Scenes cover a broad spectrum of image distortions we may encounter in real-world like illumination changes, occlusion or shadows.  
 
-In each scenario we are given a set of frames corresponding to a video. Additionally, labelled images (ground truth) are available for each frame.
+In each scene, we are given a set of frames corresponding to a video. Additionally, labeled images (ground truth) are available for each frame.
 
-Colors of these labelled frames represent different types of objects:
+Colors of these labeled frames represent different types of objects:
 
 - Black pixels (0,0,0): Background.
 - Red pixels (255,0,0): Moving object with label 1 along the sequence.
@@ -73,9 +73,8 @@ matrix of the i-th Gaussian in the mixture at time $t$, and where $\eta$ is a Ga
 
 The distribution of recently observed values of each pixel in the scene is now characterized by a mixture of Gaussians. This mixture can now be used to estimate the probability that a certain pixel value belongs to a background or foreground region. The idea is similar to an approach called Bog-of-words (BoW) classification. Some Gaussians are more likely to represent a background region than others. If we know which Gaussians represents background objects, we can assign new pixel values to either a background or foreground region by calculating its proximity to background Gaussians.
 
-To understand this, consider the accumulation of supporting evidence and relatively low
-variance for "background" distributions when a static, persistent object is visible. In contrast, when a new object occludes the background object, it will not, in general, match one of the existing distributions which will result in either the creation of a new distribution
-or an increase in variance of an existing distribution. Also, the variance of the moving object
+To understand this, consider the accumulation of supporting evidence and relatively low variance for "background" distributions when a static, persistent object is visible. In contrast, when a new object occludes the background object, it will not, in general, match one of the existing distributions which will result in either the creation of a new distribution
+or an increase in the variance of an existing distribution. Also, the variance of the moving object
 is expected to remain larger than a background pixel until the moving object stops.
 
 ### 5. Metrics
@@ -104,9 +103,9 @@ We already discussed how GMMs can be used to segment video frames. In Layman's t
 
 ##### Overall distribution per category
 
-First, we look the overall distribution of pixel values by category (foreground/background) across the different scenes of the dataset. For instance, we simply take the values of all background pixels and compute statistical descriptors like mean and standard deviation.
+First, we look at the overall distribution of pixel values by category (foreground/background) across the different scenes of the dataset. For instance, we simply take the values of all background pixels and compute statistical descriptors like the mean and standard deviation.
 
-The following tables show the result for three out of the eight scenarios we analyzes. Results for the remaining scenarios can be found in the project's repository [9].
+The following tables show the result for three out of the eight scenes we analyze. Results for the remaining scenes can be found in the project's repository [9].
 
 |     I\_SI\_01          |  TOTAL (RED)  | FG (RED)  | BG (RED) | TOTAL (GREEN)  | FG (GREEN)  | BG (GREEN) | TOTAL (BLUE)  | FG (BLUE)  | BG (BLUE) |
 |------------------------|---------------|-----------|----------|----------------|-------------|------------|---------------|------------|-----------|
@@ -124,14 +123,51 @@ The following tables show the result for three out of the eight scenarios we ana
 | Mean                   |  99.93        | 76.47     | 100.38   | 97.59          | 57.14       | 98.36      | 91.49         | 59.73      | 92.10     |
 | Std                    |  62.39        | 49.09     | 62.57    | 60.28          |  37.96      | 60.40      | 57.85         | 32.85      | 58.10     |
 
+##### Distribution per pixel process
+
+Above we analyzed the overall distribution of pixel values across the whole scene. However, this doesn't fully represent the data what the actual algorithm looks at. Instead of looking at the distribution of pixel values across the whole scene, it is better to pick a certain pixel and look at the distribution of its values. This is what we call a pixel process.  
+
+The following tables show the mean and standard deviation for the selected pixel values of a pixel process.
+
+| I\_SI\_01 <br/> x: 240 <br/> y: 160    |  TOTAL (RED)  | FG (RED)  | BG (RED) | TOTAL (GREEN)  | FG (GREEN)  | BG (GREEN) | TOTAL (BLUE)  | FG (BLUE)  | BG (BLUE) |
+|------------------------|---------------|---------------|-----------|----------|----------------|-------------|------------|---------------|------------|-----------|
+| Mean                                   | 186.01        | 113.89    | 191.20   |  184.96        | 98.47       |  191.21    | 183.69        | 89.52      | 190.84    |
+| Std                                    | 24.15         | 56.43     |  4.24    |   27.33        |  56.81      |  4.26      | 28.64         |  46.42     | 4.60      |
+
+| I\_SI\_01 <br/> x: 170 <br/> y: 150    |  TOTAL (RED)  | FG (RED)  | BG (RED) | TOTAL (GREEN)  | FG (GREEN)  | BG (GREEN) | TOTAL (BLUE)  | FG (BLUE)  | BG (BLUE) |
+|------------------------|---------------|---------------|-----------|----------|----------------|-------------|------------|---------------|------------|-----------|
+| Mean                                   | 101.55        | 35.68     | 133.38   | 96.83          |  39.86      | 125.33     | 71.97.        | 20.60      | 97.89     |
+| Std                                    | 47.41         | 26.40     | 2.18     | 40.45          |  16.00      |  2.12      |  36.20        | 11.05      |  2.11     |
+
+| I\_IL\_01 <br/> x: 150 <br/> y: 150    |  TOTAL (RED)  | FG (RED)  | BG (RED) | TOTAL (GREEN)  | FG (GREEN)  | BG (GREEN) | TOTAL (BLUE)  | FG (BLUE)  | BG (BLUE) |
+|------------------------|---------------|---------------|-----------|----------|----------------|-------------|------------|---------------|------------|-----------|
+| Mean                                   | 36.96         | 133.75    | 34.04    |   38.55        | 95.87       | 36.84      |  37.85        | 79.75      | 36.61     |
+| Std                                    | 18.80         | 48.48     | 3.78     |   13.27        | 50.00       |  3.87      |  10.24        | 38.56      | 3.94      |
 
 #### 6.2. Data Visualization
 
+
+The following image shows pixel-process distributions for different pixel positions of the scene I\_SI\_01.
+
+
+<img src="images/red_channel_visualization.png" width="350px"/> <img src="images/green_channel_visualization.png" width="350px"/>
+<center><img src="images/blue_channel_visualization.png" width="350px"/></center>
+
+##### "Running" histogram analysis
+
+Remember that we want to develop an adaptive segmentation algorithm that is robust against distortions like illumination changes or camera motion. For instance, consider somebody who turns on the light in a room. The illuminance will increase sharply forcing our model to adapt to this change.
+
+Histograms like the one above don't capture how distributions change over time. Therefore, to develop our intuition we can analyze how the histogram values of selected pixel values change over time.
+
+Results of this analysis can be found in the Github repository inside the analysis/video folder.
+
+
+
 #### 6.4. Benchmark Model
 
-Fortunately, benchmarks are provided on the website of the LASIESTA dataset. This benchmarks illustrate the obtained F1-score for eight different background subtraction algorithms including the algorithm suggested by Stauffer. Scores are provided for individual scenario as well as an average F1-score.
+Fortunately, benchmarks are provided on the website of the LASIESTA dataset. This benchmark illustrates the obtained F1-score for eight different background subtraction algorithms including the algorithm suggested by Stauffer. Scores are provided for individual scenes as well as an average F1-score.
 
-Unfortunately, the website is not clear on how these score were obtained meaning that it's not fully clear whether they first trained the GMM on the whole scenario to get a background reference image or if the updated the model framewise while computing the score. As the second approach would be similar to a real-world setting where we gradually have to update our model, it seems the better approach for evaluating this algorithm.
+Unfortunately, the website is not clear on how these scores were obtained meaning that it's not fully clear whether they first trained the GMM on the whole scene to get a background reference image or if the updated the model frame-wise while computing the score. As the second approach would be similar to a real-world setting where we gradually have to update our model, it seems the better approach for evaluating this algorithm.
 
 
 
@@ -139,7 +175,7 @@ Unfortunately, the website is not clear on how these score were obtained meaning
 
 #### 7.1. Stauffer and Grimson's algorithm
 
-In section 4 we already discussed the general idea of using GMM based algorithms for image segmentation. However, there as still things we have to think about before can start to implement such an algorithm.
+In section 4 we already discussed the general idea of using GMM based algorithms for image segmentation. However, there as still things we have to think about before we can start implementing our algorithm.
 
 Remember that we are required to fit a GMM for each pixel of an image. In our setting, this would mean that we have to fit 101376 (352x288 pixels) GMM every time we encounter a new frame. Fitting so many Gaussians from scratch takes time and we would never be able to implement it in a way that it satisfied the needs of real-time applications.
 
@@ -160,8 +196,7 @@ Fitting a GMM is not enough to classify a frame's pixel value as background or f
 
 Stauffer and Grimson suggest ordering the Gaussians of a mixture model according to their $\omega/\sigma$ ratio. This value increases both as a distribution gains more evidence and as the variance decreases. This ordering of the model is effectively an ordered, open-ended list, where the most likely background distributions remain on top and the less probable transient background distributions gravitate towards the bottom.
 
-Then first $B$ distributions are chosen as background model that account for a predefined
-fraction of the evidence $P$.
+Then first $B$ distributions are chosen as background model that accounts for a predefined fraction of the evidence $P$.
 
 <center>$B = \text{argmin}_b \sum_{k=1}^b w_k > T$</center>
 
@@ -219,11 +254,11 @@ def fit(X):
 
 #### 7.3. Implementation
 
-In this section, we take a closer look at the actual implementation. We developed a framework that takes frames of a video and returns a segment image as output.
+In this section, we take a closer look at the actual implementation. We developed a framework that takes frames of a video and returns a segmented image as output.
 
 ##### Segmentizer
 
-A video can be segmentized by creating a Segmentizer object. The `fit_and_predict` method takes a numpy image as input and returns a two dimensional segment map.
+A video can be segmentized by creating a Segmentizer object. The `fit_and_predict` method takes a Numpy image as input and returns a two-dimensional segment map.
 
 Each pixel value of the segment map can either be `True` or `False`. `True` marks a background pixel and `False` marks a foreground pixel.
 
@@ -268,7 +303,7 @@ A tricky question was to figure out how the GMM should be initialized. Initializ
 - Initialize the mixture with k Gaussian with arbitrary mean and variance
 - Force the user to provide multiple frames for initialization
 
-I finally ended up with pre-initializing all Gaussians with mean $[0,0,0]$ and variance $1$ (to avoid a divisions by zero). The weight's of all Gaussians get set to zero. In practice, mean $[0,0,0]$ and variance $1$ guarantees that the first Gaussian gets replace once we obtain the first pixel value. The new distribution is likely to fit the pixel process since it's mean will then be initialized with the pixels value.
+I finally ended up with pre-initializing all Gaussians with mean $[0,0,0]$ and variance $1$ (to avoid divisions by zero). The weight's of all Gaussians get set to zero. In practice, mean $[0,0,0]$ and variance $1$ guarantees that the first Gaussian gets replace once we obtain the first pixel value. The new distribution is likely to fit the pixel process since it's mean will then be initialized with the pixels value.
 
 ```
 def _init_mixture(self):
@@ -403,13 +438,13 @@ def partial_fit(self, x, lr):
 
 #### 7.4. Refinement
 
-One of the major issue I ran into was the implementation's performance. I've implemented the algorithm in Python and it turned out to be a really bad choice for implementing an algorithm that requires near "real-time" capabilities. One of the major reasons why such algorithms usually get implemented in C or C++. Python is significantly slower than these programming languages since the code needs to be interpreted first. Furthermore, it doesn't allow just-in-time compilation and running multiple threads in parallel is often not faster due to GIL.
+One of the major issues I ran into was the implementation's performance. I've implemented the algorithm in Python and it turned out to be a really bad choice for implementing an algorithm that requires near "real-time" capabilities. One of the major reasons why such algorithms usually get implemented in C or C++. Python is significantly slower than these programming languages since the code needs to be interpreted first. Furthermore, it doesn't allow just-in-time compilation and running multiple threads in parallel is often not faster due to GIL.
 
 However, there were still a few things that could be done to make the code run a little bit faster. I started to profile the code using `cProfile`. It provides you with detailed information about how much time is spent in each function.
 
 `python3 -m cProfile -s cumtime test.py`
 
-It turned out that must of the time is spent with matrix computations and therefore I started to think about ways to optimize these computations. As already mentioned, it turned out that replacing some Numpy / Scikit-Learn functions by my own implementation (making use of the IID assumption) can decrease the runtime of the algorithm significantly. However, still, I wasn't happy with the result.
+It turned out that most of the time is spent with matrix computations and therefore I started to think about ways to optimize these computations. As already mentioned, it turned out that replacing some Numpy / Scikit-Learn functions by my own implementation (making use of the IID assumption) can decrease the runtime of the algorithm significantly. However, still, I wasn't happy with the result.
 
 Next, I came across a framework called Numba [10]. It allows you to speed up applications by means of just-in-time compilation. Simple functions, typically array-oriented and math-heavy functions, can be annotated and then get compiled to native machine instructions.
 
@@ -419,9 +454,10 @@ And indeed, this turned out to speed up the application significantly. We are st
 
 **With Numba:**  18.79 sec $\hspace{4cm}$ **Without Numba:** 34.89 sec
 
+
 ### 8. Result
 
-As stated in section 5 we evaluated the algorithm's performance on eight different scenarios by means of the F1-score.
+As stated in section 5 we evaluated the algorithm's performance on eight different scenes by means of the F1-score.
 
 The following table shows the result for each category:
 
@@ -431,9 +467,32 @@ The following table shows the result for each category:
 | **F1-Score (benchmark)**  |    0.355     |   0.8811      |  0.2392      | 0.8342      |  -        |   0.95    |   0.8409   |    -       |
 
 
-According to these numbers our model seems to be far better than the benchmark model. However, it seems to me that we shouldn't trust this comparison. Unfortunately, the website doesn't state based on which assumptions the benchmark got evaluated.
+According to these numbers our model seems to be far better than the benchmark model. However, it seems to me that we shouldn't trust this comparison. Unfortunately, the website doesn't state how exactly these results were obtained.
+
+For example, our developed model initially tends to treat all pixel values as background pixels. This comes in handy since all scenes first start with multiple background-only frames. As our algorithm predicts background frames first our dataset naturally acts in favor of our dataset.
 
 
+
+<center><img src="images/result_1.png" width="280px" /> <img src="images/result_2.png" width="280px" /></center>
+<center><img src="images/result_3.png" width="280px" /> <img src="images/result_4.png" width="280px" /></center>
+
+### 8.1. Justification
+
+In this section, we will take a closer look at the results. First, let's take a look at the result for scene I\_SI\_01. According to the description these scene s do not contain camouflage, occlusions, illumination changes, modified background, camera motion or bootstrapping wherefore it should easy to segment. 
+Our model also performs extremely well on this scene with an F1-score of 0.989. This confirms our assumption. 
+
+We also achieve similar results for scene I\_CA\_01 (moving objects remaining temporally static on background regions), I\_BS\_01 (moving objects from the first frame) and I\_OC\_01 (totally or partially occluded moving objects).
+
+However, with an F1-score of 0.862 our model seems to have problems with illumination changes. It performs even worse when the camera is not static anymore and starts to move. This behavior can be observed in case of scene I\_MC\_01 and I\_SM\_01.
+
+
+**Improvement**  
+When we look at the resulting segmented videos we can observe that the algorithm has problems to cope with shadows. This suggests the introduction of further post-processing steps like shadow removal. 
+
+### 9. Conclusion
+
+We've analyzed, implemented and evaluated an algorithm for adaptive video foreground-background segmentation.  
+The final performance evaluation was done on  eight difference scenes from the LASIESTA dataset. The best F1-scores we obtained were 0.989 and 0.99 on a scene not containing camouflage, illumination changes, modified background, camera motion and not or partially occluded objects. The worst F1-score was 0.690 obtained on a scene with non-completely static cameras. Further improvements could be done by applying shadow removal.
 
 ### References
 

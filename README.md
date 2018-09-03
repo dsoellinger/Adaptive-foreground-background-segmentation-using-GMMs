@@ -10,8 +10,8 @@ This project was also my capstone project for the Udacity Machine Learning Nanod
 
 
 <p float="left">
-  <img src="https://raw.githubusercontent.com/dsoellinger/Background-mixture-models-for-real-time-tracking/master/videos/sample_seg_1.gif" width="400px" style="margin-right: 10px;"/>
-  <img src="https://raw.githubusercontent.com/dsoellinger/Background-mixture-models-for-real-time-tracking/master/videos/sample_seg_2.gif" width="400px" style="margin-left: 10px;"/> 
+  <img src="https://raw.githubusercontent.com/dsoellinger/Background-mixture-models-for-real-time-tracking/master/submission/images/sample_seg_1.gif" width="400px" style="margin-right: 10px;"/>
+  <img src="https://raw.githubusercontent.com/dsoellinger/Background-mixture-models-for-real-time-tracking/master/submission/images/sample_seg_2.gif" width="400px" style="margin-left: 10px;"/> 
 </p>
 
 ### How to segment our own videos?
