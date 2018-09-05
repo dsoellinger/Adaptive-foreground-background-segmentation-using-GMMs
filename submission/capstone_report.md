@@ -120,11 +120,11 @@ Another frequently used metric is "Intersection over Union". As the name suggest
 
 <center>$\text{IoU} = \frac{TB}{TB + FB + FF}$</center>
 
-So, what's the different between F1-Score and IoU? Well, both metrics measure similar things given the fact that they are "connected" by a constant factor and it's easy to convert one metric into the other one.
+But what's the different between F1-Score and IoU? Well, both metrics measure similar things given the fact that they are "connected" by a constant factor and it's easy to convert one metric into the other one.
 
-<center>$\frac{\text{F1-Score}}{\text{IoU}} = \frac{\frac{2TB}{2TB + FF + FB}}{\frac{TB}{TB + FB + FF}} = \frac{2TB \cdot (TB + FB + FF)}{TB \cdot (2TB +FF+FB)} = \frac{TB + FB + FF}{TB +0.5FF+0.5FB)}$</center>
+<center>$\text{IoU} = \frac{\text{F1-Score}}{2-\text{F1-Score}}$ [11]</center>
 
-
+So, it doesn't really matter if we pick F1-Score or IoU. But will work fine in our case. However, since the F1-Score is also provided for the benchmark model, we prefer F1-Score over IoU. 
 
 ### 6. Analysis
 
@@ -544,4 +544,5 @@ real-time tracking. Proc IEEE Conf on Comp Vision and Patt Recog
 **[7]** https://en.wikipedia.org/wiki/F1_score  
 **[8]** A Dempster, N. Laird, and D. Rubin. Maximum likelihood from incomplete data via the EM algorithm. Journal of the Royal Statistical Society, 39 (Series B):1-38, 1977.  
 **[9]** https://github.com/dsoellinger/Background-mixture-models-for-real-time-tracking/blob/master/analysis/analysis\_numerical.ipynb  
-**[10]** https://numba.pydata.org/
+**[10]** https://numba.pydata.org/  
+**[11]** https://brenocon.com/blog/2012/04/f-scores-dice-and-jaccard-set-similarity/
