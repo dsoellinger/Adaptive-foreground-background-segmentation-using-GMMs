@@ -13,7 +13,8 @@ Deep learning enthusiast might now suggest the use of novel neural networks like
 
 ### 2. Problem Statement
 
-The goal of this project is to develop a solution for adaptive foreground-background video segmentation and to assess its performance. The solution is based on the algorithm introduced by Stauffer and Grimson [4].
+The goal of this project is to develop a solution for adaptive foreground-background video segmentation and to assess its performance. However, instead of  trying to solve this problem through deep learning, we will focus on method proposed by Stauffer and Grimson [4] in 1999. The researches suggested fitting a GMM to accurately segment video frames into foreground and background segments. What's special about this method is the fact that the model can actively adapt to a scene. Whenever a new frame is captured by the camera and passed to the classifier, the classifier will update its GMM and return a segment map. Having a classier that can actively adapt to a scene desirable since it can deal with a large number of different scenes with having to be trained before.
+
 The model's performance gets evaluated on the LASIESTA [5] dataset. A good model should finally be able to accurately segment any video into a foreground or background regions after "seeing" a few frames and actively adapt itself to scenery changes. Ideally, the model should be able to perform this segmentation task in real-time.
 
 ### 3. Dataset
