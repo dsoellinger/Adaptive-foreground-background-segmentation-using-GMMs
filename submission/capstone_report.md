@@ -73,26 +73,57 @@ matrix of the i-th Gaussian in the mixture at time $t$, and where $\eta$ is a Ga
 
 The distribution of recently observed values of each pixel in the scene is now characterized by a mixture of Gaussians. This mixture can now be used to estimate the probability that a certain pixel value belongs to a background or foreground region. The idea is similar to an approach called Bog-of-words (BoW) classification. Some Gaussians are more likely to represent a background region than others. If we know which Gaussians represents background objects, we can assign new pixel values to either a background or foreground region by calculating its proximity to background Gaussians.
 
-To understand this, consider the accumulation of supporting evidence and relatively low variance for "background" distributions when a static, persistent object is visible. In contrast, when a new object occludes the background object, it will not, in general, match one of the existing distributions which will result in either the creation of a new distribution
-or an increase in the variance of an existing distribution. Also, the variance of the moving object
+To understand this, consider the accumulation of supporting evidence and relatively low variance for "background" distributions when a static, persistent object is visible. In contrast, when a new object occludes the background object, it will not, in general, match one of the existing distributions which will result in either the creation of a new distribution or an increase in the variance of an existing distribution. Also, the variance of the moving object
 is expected to remain larger than a background pixel until the moving object stops.
 
 ### 5. Metrics
 
-A good way to assess the quality of the developed model is the F1-score [6] [7]. It's defined as the harmonic average of the precision and recall, where an F1 score reaches its best value at 1 and worst at 0.
+We are now going to discuss different metric to identify whether they are well suited to assess the performance of segmentation problems. Let's start with the most simple ones: Accuracy, Precision and Recall.  
 
-<center>$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$</center>
+**Note:** We denote TB, FF, TB and TF as 
 
-<center>$\text{Precision} = \frac{\text{True Positive}}{\text{True Positive} + \text{False Positive}}$</center>
+- **FB:** Classified as background pixel, but it's a foreground pixel
+- **FF:** Classified as foreground pixel, but it's a background pixel
+- **TB:**  Classified as background pixel and it's a background pixel
+- **TF:**  Classified as foreground pixel and it's a foreground pixel
 
-<center>$\text{Recall} = \frac{\text{True Positive}}{\text{True Positive} + \text{False Negative}}$</center>
 
-In our problem domain _True Positive_, _False Positive_, _False Negative_ and _False Positive_ can be understood as:
+**Accuracy:**
+<center>$Accuracy = \frac{TB + TF}{TB + TF + FB + FF}$</center>
 
-- **False Positive:** Classified as background pixel, but it's a foreground pixel
-- **False Negative:** Classified as foreground pixel, but it's a background pixel
-- **True Positive:**  Classified as background pixel and it's a background pixel
-- **True Negative:**  Classified as foreground pixel and it's a foreground pixel
+In other words, the accuracy tells us how many of the total predictions were correct. However, accuracy is not a good measure for a segmentation problem due to the fact that the distribution of background-foreground pixel is imbalanced meaning that there are more background pixels than foreground pixels. A classifier that always predicts background pixel is likely to achieve a good accuracy, although might not perform well in practice.
+
+**Recall:**
+
+<center>$\text{Recall} = \frac{\text{TB}}{\text{TB} + \text{FF}}$</center>
+
+Recall measures how many of the actual background pixels are labeled as background pixels. So, what if we classified all pixels as background pixels? Well, obviously the recall would be 1. Therefore, it's not a good idea to entirely rely on recall as metric entirely.
+
+
+**Precision:**
+
+<center>$Precision = \frac{TB}{TB + FB}$</center>
+
+Precision measures how many of the pixels predicted to be background pixels got classify correctly. Let's assume we would classify a single pixel to be a background pixel and that classification would be correct. Again, it's not a good idea to rely on this metric entirely.
+
+To fully evaluate the effectiveness of a model, we must examine both precision and recall. The leads us to another metric called F1-score.
+
+**F1-Score:**
+
+A frequently used metric to assess the quality segmentation models is the F1-score [6] [7]. It's defined as the harmonic average of the precision and recall, which it reaches its best value at 1 and worst at 0.
+
+<center>$\text{F1-Score} = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2TB}{2TB + FF + FB}$</center>
+
+**Intersection over Union (IoU):**
+
+Another frequently used metric is "Intersection over Union". As the name suggest we consider our problem as two overlapping regions. One region is defined by the predicted background pixels while the second region is defined by the actual background region. We can now compute IoU as follows:
+
+<center>$\text{IoU} = \frac{TB}{TB + FB + FF}$</center>
+
+So, what's the different between F1-Score and IoU? Well, both metrics measure similar things given the fact that they are "connected" by a constant factor and it's easy to convert one metric into the other one.
+
+<center>$\frac{\text{F1-Score}}{\text{IoU}} = \frac{\frac{2TB}{2TB + FF + FB}}{\frac{TB}{TB + FB + FF}} = \frac{2TB \cdot (TB + FB + FF)}{TB \cdot (2TB +FF+FB)} = \frac{TB + FB + FF}{TB +0.5FF+0.5FB)}$</center>
+
 
 
 ### 6. Analysis
