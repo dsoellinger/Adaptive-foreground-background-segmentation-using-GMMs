@@ -520,7 +520,17 @@ However, with an F1-score of 0.862 our model seems to have problems with illumin
 **Improvement**  
 When we look at the resulting segmented videos we can observe that the algorithm has problems to cope with shadows. This suggests the introduction of further post-processing steps like shadow removal. 
 
-### 9. Conclusion
+### 9. Reflection
+
+The most challenging part of this project was to understand the algorithm in a way that I was able to implement it. Initially, when I read the paper the first time  I thought everything is clear and straightforward to implement. However, soon it turned out that the paper lacks a few important details required to really implement the algorithm. I ended up reading many other papers and other people's code until finally got to a point where I was confident that my solution was right. Again, it showed that it is better to start sketching your algorithm on a piece of paper first than starting to implement immediately.
+
+Furthermore, it was extremely enlightening to see how slow matrix computations can be and my you can speed up our calculations simply by assuming that the data  are iid. Nowadays, you always have in our mind that all devices have enough processing power. But still, writing "smart" and efficient code shouldn't be treated as a second-class citizen.
+
+I also learned that it's almost impossible to get a code like mine written in Python running in real-time. I spent hours looking into different frameworks (like Numa, cPython) and tried to make the computations run in parallel. Python is fantastic for fast prototyping. But if computation-time matters, I would implement it in C / C++ next time.
+
+Finally, I have to say that I'm quite satisfied with my results. Of course, there's still room for improvement, for example, implementing shadow removal. However, I'm really surprised how fast the network can adapt to new scenes. My assumption was that it will take a couple of frames until it produces satisfying results, but all in all it's way faster than I expected. 
+
+### 10. Conclusion
 
 We've analyzed, implemented and evaluated an algorithm for adaptive video foreground-background segmentation.  
 The final performance evaluation was done on  eight difference scenes from the LASIESTA dataset. The best F1-scores we obtained were 0.989 and 0.99 on a scene not containing camouflage, illumination changes, modified background, camera motion and not or partially occluded objects. The worst F1-score was 0.690 obtained on a scene with non-completely static cameras. Further improvements could be done by applying shadow removal.
