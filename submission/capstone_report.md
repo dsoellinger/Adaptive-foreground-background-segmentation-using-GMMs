@@ -470,6 +470,8 @@ def partial_fit(self, x, lr):
 
 #### 7.4. Refinement
 
+##### Computational complexity:
+
 One of the major issues I ran into was the implementation's performance. I've implemented the algorithm in Python and it turned out to be a really bad choice for implementing an algorithm that requires near "real-time" capabilities. One of the major reasons why such algorithms usually get implemented in C or C++. Python is significantly slower than these programming languages since the code needs to be interpreted first. Furthermore, it doesn't allow just-in-time compilation and running multiple threads in parallel is often not faster due to GIL.
 
 However, there were still a few things that could be done to make the code run a little bit faster. I started to profile the code using `cProfile`. It provides you with detailed information about how much time is spent in each function.
@@ -485,6 +487,36 @@ And indeed, this turned out to speed up the application significantly. We are st
 **Time to process 10 frames:**
 
 **With Numba:**  18.79 sec $\hspace{4cm}$ **Without Numba:** 34.89 sec
+
+##### Parameter selection:
+
+Figuring out the right parameters turned out to be tricky since four parameters had to be chosen appropriately at the same time. I finally ended up rendering the effect an individual parameter change and studying its effect.
+
+
+**Learning rate:**
+
+lr = 0.5    |    lr = 0.2  |   lr = 0.005  |  lr=0.00001
+:----------:|:------------:|:-------------:|:-------------:
+![](images/lr_0.5.png)  |  ![](images/lr_0.2.png) |  ![](images/lr_0.005.png) | ![](images/lr_0.00001.png)
+
+As we can see, choosing the learning rate too high results in the object's contours being ill-defined. 
+
+**Initial variance:**
+
+Whenever we add a new Gaussian, we need to choose an appropriate initial variance. The table shows different segmentation results for different initial variances. As we can see, a small variance results in a smaller chance of classifying pixels as background pixels.
+
+Var = 72    |   Var = 50  |   Var = 32  |  Var = 6
+:----------:|:------------:|:-------------:|:-------------:
+![](images/var_72.png)  |  ![](images/var_50.png) |  ![](images/var_32.png) | ![](images/var_6.png)
+
+**Initial weight:**
+
+We not only have to set the initial variance for a Gaussian, we also need to define an initial weight. The table shows the segmentation results for different initial weights.
+
+w = 0.5    |   w = 0.25  |   w = 0.1  |  w = 0.03
+:----------:|:------------:|:-------------:|:-------------:
+![](images/w_0.5.png)  |  ![](images/w_0.25.png) |  ![](images/w_0.1.png) | ![](images/w_0.03.png)
+
 
 
 ### 8. Result
